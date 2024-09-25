@@ -1,1 +1,3 @@
-module Interpreter_Code
+module mockc
+
+go 1.23.1

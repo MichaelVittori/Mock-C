@@ -13,29 +13,35 @@ func TestNextToken(t *testing.T) {
 	
 	let add = fn(x, y){ x + y; };
 	let sum = add(x, y);
-	`
+	!-/*5;
+	142<7>31;
+	if (5 = 10) {
+		return true;
+	} else {
+		return false;
+	}`
 
 	tests := []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
 	}{
 		// Declare and assign X
-		{token.LET, = "let"},
-		{token.IDENTIFIER, "x"}
+		{token.LET, "let"},
+		{token.IDENTIFIER, "x"},
 		{token.ASSIGN, "="},
 		{token.INTEGER, "5"},
 		{token.SEMICOLON, ";"},
 
 		// Declare and assign y
-		{token.LET, = "let"},
-		{token.IDENTIFIER, "y"}
+		{token.LET, "let"},
+		{token.IDENTIFIER, "y"},
 		{token.ASSIGN, "="},
 		{token.INTEGER, "10"},
 		{token.SEMICOLON, ";"},
 
 		// Declare and assign add
-		{token.LET, = "let"},
-		{token.IDENTIFIER, "add"}
+		{token.LET, "let"},
+		{token.IDENTIFIER, "add"},
 		{token.ASSIGN, "="},
 		//Func and params of add
 		{token.FUNCTION, "fn"},
@@ -53,16 +59,55 @@ func TestNextToken(t *testing.T) {
 		{token.RBRACE, "}"},
 		{token.SEMICOLON, ";"},
 
-		{token.DIVIDE, "/"},
-		{token.MOD, "%"},
+		// Sum definition and add function call
+		{token.LET, "let"},
+		{token.IDENTIFIER, "sum"},
+		{token.ASSIGN, "="},
+		{token.IDENTIFIER, "add"},
 		{token.LPAREN, "("},
+		{token.IDENTIFIER, "x"},
+		{token.COMMA, ","},
+		{token.IDENTIFIER, "y"},
+		{token.RPAREN, ")"},
+		{token.SEMICOLON, ";"},
+
+		// Giberish line 1
+		{token.NOT, "!"},
+		{token.MINUS, "-"},
+		{token.DIVIDE, "/"},
+		{token.TIMES, "*"},
+		{token.INTEGER, "5"},
+		{token.SEMICOLON, ";"},
+
+		// Giberish line 2
+		{token.INTEGER, "142"},
+		{token.LTHAN, "<"},
+		{token.INTEGER, "7"},
+		{token.GTHAN, ">"},
+		{token.INTEGER, "31"},
+		{token.SEMICOLON, ";"},
+
+		// If statement
+		{token.IF, "if"},
+		{token.LPAREN, "("},
+		{token.INTEGER, "5"},
+		{token.ASSIGN, "="},
+		{token.INTEGER, "10"},
 		{token.RPAREN, ")"},
 		{token.LBRACE, "{"},
-		{token.RBRACE, "}"},
-		{token.LBRACKET, "["},
-		{token.RBRACKET, "]"},
-		{token.COMMA, ","},
+		{token.RETURN, "return"},
+		{token.TRUE, "true"},
 		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+
+		// Else statement
+		{token.ELSE, "else"},
+		{token.LBRACE, "{"},
+		{token.RETURN, "return"},
+		{token.FALSE, "false"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+
 		{token.EOF, ""},
 	}
 

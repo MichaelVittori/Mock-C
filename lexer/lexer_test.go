@@ -8,16 +8,51 @@ import (
 )
 
 func TestNextToken(t *testing.T) {
-	input := `=+*-/%(){}[],;`
+	input := `let x = 5;
+	let y = 10;
+	
+	let add = fn(x, y){ x + y; };
+	let sum = add(x, y);
+	`
 
 	tests := []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
 	}{
+		// Declare and assign X
+		{token.LET, = "let"},
+		{token.IDENTIFIER, "x"}
 		{token.ASSIGN, "="},
+		{token.INTEGER, "5"},
+		{token.SEMICOLON, ";"},
+
+		// Declare and assign y
+		{token.LET, = "let"},
+		{token.IDENTIFIER, "y"}
+		{token.ASSIGN, "="},
+		{token.INTEGER, "10"},
+		{token.SEMICOLON, ";"},
+
+		// Declare and assign add
+		{token.LET, = "let"},
+		{token.IDENTIFIER, "add"}
+		{token.ASSIGN, "="},
+		//Func and params of add
+		{token.FUNCTION, "fn"},
+		{token.LPAREN, "("},
+		{token.IDENTIFIER, "x"},
+		{token.COMMA, ","},
+		{token.IDENTIFIER, "y"},
+		{token.RPAREN, ")"},
+		// Body definition
+		{token.LBRACE, "{"},
+		{token.IDENTIFIER, "x"},
 		{token.PLUS, "+"},
-		{token.TIMES, "*"},
-		{token.MINUS, "-"},
+		{token.IDENTIFIER, "y"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+		{token.SEMICOLON, ";"},
+
 		{token.DIVIDE, "/"},
 		{token.MOD, "%"},
 		{token.LPAREN, "("},

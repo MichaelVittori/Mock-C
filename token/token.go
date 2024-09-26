@@ -28,6 +28,10 @@ const (
 	NOT   = "!"
 	LTHAN = "<"
 	GTHAN = ">"
+	EQ    = "=="
+	NEQ   = "!="
+	LEQ   = "<="
+	GEQ   = ">="
 
 	// Delimeters
 	COMMA     = ","

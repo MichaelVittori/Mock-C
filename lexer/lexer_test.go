@@ -3,8 +3,8 @@ package lexer
 // This lexer is built using the TDD methodology so these tests are developed before the functionality to pass them.
 
 import (
-	"mockc/token"
-	"testing"
+	"mockc/token";
+	"testing";
 )
 
 func TestNextToken(t *testing.T) {
@@ -19,7 +19,12 @@ func TestNextToken(t *testing.T) {
 		return true;
 	} else {
 		return false;
-	}`
+	}
+	10 == 10;
+	10 != 9;
+	100 >= 99;
+	99 <= 100;
+	`
 
 	tests := []struct {
 		expectedType    token.TokenType
@@ -107,6 +112,30 @@ func TestNextToken(t *testing.T) {
 		{token.FALSE, "false"},
 		{token.SEMICOLON, ";"},
 		{token.RBRACE, "}"},
+
+		// Logical equals
+		{token.INTEGER, "10"},
+		{token.EQ, "=="},
+		{token.INTEGER, "10"},
+		{token.SEMICOLON, ";"},
+
+		// Not equals
+		{token.INTEGER, "10"},
+		{token.NEQ, "!="},
+		{token.INTEGER, "9"},
+		{token.SEMICOLON, ";"},
+
+		// Greater than
+		{token.INTEGER, "100"},
+		{token.GEQ, ">="},
+		{token.INTEGER, "99"},
+		{token.SEMICOLON, ";"},
+
+		// Less than
+		{token.INTEGER, "99"},
+		{token.LEQ, "<="},
+		{token.INTEGER, "100"},
+		{token.SEMICOLON, ";"},
 
 		{token.EOF, ""},
 	}

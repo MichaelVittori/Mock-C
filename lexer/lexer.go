@@ -41,7 +41,11 @@ func (l *Lexer) NextToken() token.Token {
 
 	switch l.ch {
 	case '=':
-		tok = newToken(token.ASSIGN, l.ch)
+		if l.peekChar() == '=' {
+			tok = l.makeTwoCharToken()
+		} else {
+			tok = newToken(token.ASSIGN, l.ch)
+		}
 	case ';':
 		tok = newToken(token.SEMICOLON, l.ch)
 	case '(':
@@ -69,11 +73,23 @@ func (l *Lexer) NextToken() token.Token {
 	case '%':
 		tok = newToken(token.MOD, l.ch)
 	case '!':
-		tok = newToken(token.NOT, l.ch)
+		if l.peekChar() == '=' {
+			tok = l.makeTwoCharToken()
+		} else {
+			tok = newToken(token.NOT, l.ch)
+		}
 	case '<':
-		tok = newToken(token.LTHAN, l.ch)
+		if l.peekChar() == '=' {
+			tok = l.makeTwoCharToken()
+		} else {
+			tok = newToken(token.LTHAN, l.ch)
+		}
 	case '>':
-		tok = newToken(token.GTHAN, l.ch)
+		if l.peekChar() == '=' {
+			tok = l.makeTwoCharToken()
+		} else {
+			tok = newToken(token.GTHAN, l.ch)
+		}
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
@@ -147,4 +163,41 @@ Creates a new token struct using the information passed in
 */
 func newToken(tokenType token.TokenType, ch byte) token.Token {
 	return token.Token{Type: tokenType, Literal: string(ch)}
+}
+
+/*
+Peek one character ahead
+*/
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) { // If already at the end of the input we can't peek
+		return 0
+	} else {
+		return l.input[l.readPosition] // Otherwise, return the character ahead of the cursor
+	}
+}
+
+/*
+Assembles a two char token
+TODO: Expand this to further reduce redundancy in switch case above
+*/
+func (l *Lexer) makeTwoCharToken() token.Token {
+	ch := l.ch // Save current cursor char
+	l.readChar() // Advance cursor
+	literal := string(ch) + string(l.ch) // Combine the two
+	tok := token.Token{Type: determineLeadChar(ch), Literal: literal}
+	return tok
+}
+
+func determineLeadChar(ch byte) token.TokenType {
+	switch (ch) {
+	case '=':
+		return token.EQ
+	case '!':
+		return token.NEQ
+	case '>':
+		return token.GEQ
+	case '<':
+		return token.LEQ
+	} 
+	return token.ILLEGAL // This should never come up
 }

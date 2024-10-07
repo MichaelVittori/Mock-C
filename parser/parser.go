@@ -5,6 +5,23 @@ import (
 	"mockc/lexer"
 	"mockc/token"
 	"fmt"
+	"strconv"
+)
+
+const (
+	_ int = iota // Automatically assigns ascending ints to the consts below
+	LOWEST		// Default, non operator precedence
+	EQUALS		// ==
+	LESSGREATER // < >
+	SUM			// +
+	PRODUCT		// *
+	PREFIX		// -X or !X
+	CALL		// foobar(x)
+)
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn func(ast.Expression) ast.Expression
 )
 
 type Parser struct {
@@ -12,6 +29,17 @@ type Parser struct {
 	currToken token.Token
 	peekToken token.Token
 	errors []string // List of errors
+
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns map[token.TokenType]infixParseFn
+}
+
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
 }
 
 /*
@@ -23,11 +51,19 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	} // Returns the value of the parser being pointed to
 
+	// Make map of prefix token parse functions
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.IDENTIFIER, p.parseIdentifier)
+
 	//Read two tokens to populate curr and next
 	p.nextToken()
 	p.nextToken()
 
 	return p
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
 }
 
 /*
@@ -83,7 +119,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -129,6 +165,26 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return stmt
 }
 
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.currToken}
+	stmt.Expression = p.parseExpression(LOWEST) // Lowest refers to operator precedence for PEMDAS
+
+	if p.peekTokenIs(token.SEMICOLON) { // Semicolons are optional for expressions
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.currToken.Type] // If the current token has a parsing function use that
+	if prefix == nil { // If the token doesn't have a type, parse function, or just doesn't exist return null
+		return nil
+	}
+
+	leftExpression := prefix() // Execute the prefixParseFunction from above
+	return leftExpression
+}
 
 /*
  Return whether actual token type of currToken is equal to expected token type
@@ -153,3 +209,5 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 		return false
 	}
 }
+
+

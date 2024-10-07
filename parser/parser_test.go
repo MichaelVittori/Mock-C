@@ -117,3 +117,63 @@ return 12312;
 		}
 	}
 }
+
+func TestIdentifierExpression(t *testing.T) {
+	input := "foobar;"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statements. got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	ident, ok := stmt.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("Expression not *ast.Identifier. got=%T", stmt.Expression)
+	}
+	if ident.Value != "foobar" { //Identifier value should be foobar
+		t.Errorf("ident.Value not %s, got=%s", "foobar", ident.Value)
+	}
+	if ident.TokenLiteral() != "foobar" { //Identifier literal should also be foobar
+		t.Errorf("ident.TokenLiteral not '%s'. got =%s", "foobar", ident.TokenLiteral())
+	}
+}
+
+func TestIntegerExpression(t *testing.T) {
+	input := "0;"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statements. got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	literal, ok := stmt.Expression.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("Expression not *ast.IntegerLiteral. got=%T", stmt.Expression)
+	}
+	if literal.Value != 0 { // The value should be 0
+		t.Errorf("ident.Value not %d, got=%d", 0, literal.Value)
+	}
+	if literal.TokenLiteral() != "0" { // The literal value should be "0"
+		t.Errorf("literal.TokenLiteral not '%s'. got =%s", "0", literal.TokenLiteral())
+	}
+}

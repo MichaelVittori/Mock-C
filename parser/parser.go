@@ -53,7 +53,19 @@ func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 	p.infixParseFns[tokenType] = fn
 }
 
+func (p *Parser) peekPrecedence() int {
+	if p, ok := precedences[p.peekToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
 
+func (p *Parser) currPrecedence() int {
+	if p, ok := precedences[p.currToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
 
 /*
 "Initializes" a new Parser struct
@@ -70,6 +82,17 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.INTEGER, p.parseIntegerLiteral)
 	p.registerPrefix(token.NOT, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+
+	// Make map of infix token parse functions
+	p.infixParseFns = make(map[token.TokenType]infixParseFn)
+	p.registerInfix(token.PLUS, p.parseInfixExpression)
+	p.registerInfix(token.MINUS, p.parseInfixExpression)
+	p.registerInfix(token.DIVIDE, p.parseInfixExpression)
+	p.registerInfix(token.TIMES, p.parseInfixExpression)
+	p.registerInfix(token.EQ, p.parseInfixExpression)
+	p.registerInfix(token.NEQ, p.parseInfixExpression)
+	p.registerInfix(token.LTHAN, p.parseInfixExpression)
+	p.registerInfix(token.GTHAN, p.parseInfixExpression)
 
 	//Read two tokens to populate curr and next
 	p.nextToken()
@@ -205,7 +228,17 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	}
 
 	leftExpression := prefix() // Execute the prefixParseFunction from above
-	return leftExpression // Q. Can I just retun prefix()? Will that cause problems in the stack?
+
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() { // Keep running until finding a semicolon or a lower precedence token
+		infix := p.infixParseFns[p.peekToken.Type] // Scan the line for an infix expression
+		if infix == nil { // If none exists return the left expression as is
+			return leftExpression
+		}
+
+		p.nextToken()
+		leftExpression = infix(leftExpression)
+	}
+	return leftExpression
 }
 
 /*
@@ -254,5 +287,19 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 
 	p.nextToken() // Advance one
 	expression.Right = p.parseExpression(PREFIX) // Parse the right side of the prefix expression
+	return expression
+}
+
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	expression := &ast.InfixExpression{
+		Token:		p.currToken, // Set token to the operator currently being looked at
+		Operator:	p.currToken.Literal,
+		Left:		left, // Take left part of the expression
+	}
+
+	precedence := p.currPrecedence() // Get precedence of the operator
+	p.nextToken() // Advance and assign next token to right
+	expression.Right = p.parseExpression(precedence)
+
 	return expression
 }

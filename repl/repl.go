@@ -5,7 +5,7 @@ import (
 	"fmt" // Formatted i/o, similar to C's printf/scanf
 	"io" // Go input/output lib
 	"mockc/lexer" // our custom lexer
-	"mockc/token" // our token definitions
+	"mockc/parser"
 )
 
 const PROMPT = ">> " // Prompt at the beginning of each newline for users to know when to input
@@ -25,10 +25,38 @@ func Start(in io.Reader, out io.Writer) {
 
 		line := scanner.Text()
 		l := lexer.New(line) // Tokenize the user input
+		p := parser.New(l) // Parse the tokens
 
-		for tok := l.NextToken(); tok.Type != token.EOF; tok = l.NextToken() { // Looks like a java-style for loop
-			//tok is declared as the next token (first in l), continues until tok.Type = EOF, and the loop advances the lexer cursor forward after each iteration
-			fmt.Fprintf(out, "%+v\n", tok) // %+v shows fields of a struct by name ex. {TokenType: x, Literal: y}
+		program := p.ParseProgram()
+		if len(p.Errors()) != 0 { // If there are any errors in the parser, print them
+			printParserErrors(out, p.Errors())
+			continue
 		}
+
+		io.WriteString(out, program.String())
+		io.WriteString(out, "\n")
+	}
+}
+
+const MONKEY_FACE = `
+            __,__
+   .--.  .-"     "-.  .--.
+  / .. \/  .-. .-.  \/ .. \
+ | |  '|  /   Y   \  |'  | |
+ | \   \  \ 0 | 0 /  /   / |
+  \ '- ,\.-"""""""-./, -' /
+   ''-' /_   ^ ^   _\ '-''
+       |  \._   _./  |
+       \   \ '~' /   /
+        '._ '-=-' _.'
+           '-----'
+`
+
+func printParserErrors(out io.Writer, errors []string) {
+	io.WriteString(out, MONKEY_FACE)
+	io.WriteString(out, "Looks like there's some monkey business over here!\n")
+	io.WriteString(out, " parser errors:\n")
+	for _, msg := range errors { // Iterate through all error messages and print them
+		io.WriteString(out, "\t"+msg+"\n")
 	}
 }

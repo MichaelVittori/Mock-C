@@ -82,6 +82,9 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.INTEGER, p.parseIntegerLiteral)
 	p.registerPrefix(token.NOT, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+	p.registerPrefix(token.TRUE, p.parseBoolean)
+	p.registerPrefix(token.FALSE, p.parseBoolean)
+	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 
 	// Make map of infix token parse functions
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -312,4 +315,19 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	expression.Right = p.parseExpression(precedence)
 
 	return expression
+}
+
+func (p *Parser) parseBoolean() ast.Expression {
+	return &ast.Boolean{Token: p.currToken, Value: p.currTokenIs(token.TRUE)}
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.nextToken()
+	exp := p.parseExpression(LOWEST) // Parse expression with LOWEST precedence to get to the right parenthesis
+
+	if !p.expectPeek(token.RPAREN) { // If a right parenthesis is not found, return nil
+		return nil
+	}
+
+	return exp
 }

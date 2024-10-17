@@ -86,6 +86,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 
 	// Make map of infix token parse functions
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -378,4 +379,49 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 		p.nextToken()
 	}
 	return block
+}
+
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	// Functionally this is very similar to the if statement parse so I won't comment like that one
+	lit := &ast.FunctionLiteral{Token: p.currToken}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	lit.Parameters = p.parseFunctionParameters()
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	lit.Body = p.parseBlockStatement()
+	return lit
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	identifiers := []*ast.Identifier{}
+
+	if p.peekTokenIs(token.RPAREN) { // If the parameters are empty, return the empty array
+		p.nextToken()
+		return identifiers
+	}
+
+	p.nextToken()
+
+	ident := &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
+	identifier = append(identifiers, ident)
+
+	for p.peekTokenIs(token.COMMA) { // Iterate through all param identifiers
+		p.nextToken() // Param Identifier
+		p.nextToken() // Next comma
+		ident := &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal} // Add this new param identifier to the array
+		identifiers = append(idnetifiers, ident)
+	}
+
+	if !p.expectPeek(token.RPAREN) { // If not properly closed, return null
+		return nil
+	}
+
+	return identifiers
 }

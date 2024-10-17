@@ -13,7 +13,6 @@ func main() {
 	if err != nil { // If any error is present, panic immediately!
 		panic(err)
 	}
-
 	fmt.Printf("Hello %s! This is the Moxie programming language!\n",
 		user.Username)
 	fmt.Printf("To start using it, just start typing in commands\n")

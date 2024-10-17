@@ -19,6 +19,17 @@ const (
 	CALL		// foobar(x)
 )
 
+var precedences = map[token.TokenType]int{
+	token.EQ:	  EQUALS,
+	token.NEQ:	  EQUALS,
+	token.LTHAN:  LESSGREATER,
+	token.GTHAN:  LESSGREATER,
+	token.PLUS:   SUM,
+	token.MINUS:  SUM,
+	token.DIVIDE: PRODUCT,
+	token.TIMES:  PRODUCT,
+}
+
 type (
 	prefixParseFn func() ast.Expression
 	infixParseFn func(ast.Expression) ast.Expression
@@ -42,6 +53,8 @@ func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 	p.infixParseFns[tokenType] = fn
 }
 
+
+
 /*
 "Initializes" a new Parser struct
 */
@@ -54,6 +67,9 @@ func New(l *lexer.Lexer) *Parser {
 	// Make map of prefix token parse functions
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
 	p.registerPrefix(token.IDENTIFIER, p.parseIdentifier)
+	p.registerPrefix(token.INTEGER, p.parseIntegerLiteral)
+	p.registerPrefix(token.NOT, p.parsePrefixExpression)
+	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 
 	//Read two tokens to populate curr and next
 	p.nextToken()
@@ -176,14 +192,20 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	return stmt
 }
 
+func (p *Parser) noPrefixParseFnError(t token.TokenType) {
+	msg := fmt.Sprintf("no prefix parse function for %s found", t)
+	p.errors = append(p.errors, msg)
+}
+
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := p.prefixParseFns[p.currToken.Type] // If the current token has a parsing function use that
 	if prefix == nil { // If the token doesn't have a type, parse function, or just doesn't exist return null
+		p.noPrefixParseFnError(p.currToken.Type)
 		return nil
 	}
 
 	leftExpression := prefix() // Execute the prefixParseFunction from above
-	return leftExpression
+	return leftExpression // Q. Can I just retun prefix()? Will that cause problems in the stack?
 }
 
 /*
@@ -210,4 +232,27 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 	}
 }
 
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	literal := &ast.IntegerLiteral{Token: p.currToken}
 
+	value, err := strconv.ParseInt(p.currToken.Literal, 0, 64) // Convert it to a 64 bit integer
+	if err != nil {
+		msg := fmt.Sprintf("Could not parse %q as int", p.currToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+
+	literal.Value = value
+	return literal
+}
+
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	expression := &ast.PrefixExpression{ // Create an expression for the prefix token
+		Token:	  p.currToken,
+		Operator: p.currToken.Literal,
+	}
+
+	p.nextToken() // Advance one
+	expression.Right = p.parseExpression(PREFIX) // Parse the right side of the prefix expression
+	return expression
+}

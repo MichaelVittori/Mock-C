@@ -117,3 +117,44 @@ type IntegerLiteral struct {
 func (il *IntegerLiteral) expressionNode() {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntegerLiteral) String() string 		{ return il.Token.Literal }
+
+type PrefixExpression struct {
+	Token 	 token.Token // ex. !, -
+	Operator string
+	Right 	 Expression
+}
+
+func (pe *PrefixExpression) expressionNode() {}
+func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
+func (pe *PrefixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(pe.Operator)
+	out.WriteString(pe.Right.String())
+	out.WriteString(")")
+	// These lines capture the prefix and right side of the expression in parenthesis
+	// ex. -5 becomes (-5)
+	return out.String()
+}
+
+type InfixExpression struct {
+	Token 	 token.Token // Operator ex. +, -, *, /
+	Left 	 Expression
+	Operator string
+	Right 	 Expression
+}
+
+func (ie *InfixExpression) expressionNode() {}
+func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *InfixExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString(" " + ie.Operator + " ")
+	out.WriteString(ie.Right.String())
+	out.WriteString(")")
+	// Capture the left, operator, and right sides of the expression
+	// ex. 5 + 5 becomes (5 + 5)
+	return out.String()
+}

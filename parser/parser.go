@@ -85,6 +85,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.TRUE, p.parseBoolean)
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
+	p.registerPrefix(token.IF, p.parseIfExpression)
 
 	// Make map of infix token parse functions
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -330,4 +331,51 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	}
 
 	return exp
+}
+
+func (p *Parser) parseIfExpression() ast.Expression {
+	expression := &ast.IfExpression{Token: p.currToken}
+
+	if !p.expectPeek(token.LPAREN) { // If the IF statement is not followed with ( return nil
+		return nil
+	}
+
+	p.nextToken()
+	expression.Condition = p.parseExpression(LOWEST) // Add the condition to the IfExpression
+
+	if !p.expectPeek(token.RPAREN) { // If the next token after the condition is not ), return nil
+		return nil
+	}
+
+	if !p.expectPeek(token.LBRACE) { // If the ) is not followed by a { return nil
+		return nil
+	}
+
+	expression.Consequence = p.parseBlockStatement() // Add consequence to If Statement
+	// Note that we don't look for RBRACE
+	if p.peekTokenIs(token.ELSE) { // If there's an Else...
+		p.nextToken()
+		if !p.expectPeek(token.LBRACE) { // Check if it's followed by a brace
+			return nil
+		}
+
+		expression.Alternative = p.parseBlockStatement() // Set alternative
+	}
+	return expression
+}
+
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{Token: p.currToken}
+	block.Statements = []ast.Statement{}
+
+	p.nextToken()
+
+	for !p.currTokenIs(token.RBRACE) && !p.currTokenIs(token.EOF) { // Scan the next tokens for } or end of file
+		stmt := p.parseStatement()
+		if stmt != nil { // Add any statements found between braces to block.Statements
+			block.Statements = append(block.Statements, stmt)
+		}
+		p.nextToken()
+	}
+	return block
 }

@@ -39,7 +39,7 @@ To build and run the interpreter, you'll need:
     go build
     ```
 
-4. Run the REPL: **Evaluation step is not complete, REPL currently just returns Abstract Syntax Tree nodes. This step will be completed in the coming days.**
+4. Run the REPL: 
     ```bash
     go run main.go
     ```

@@ -5,6 +5,15 @@ import (
 	"mockc/object"
 )
 
+var (
+	// No need to create new Null objects everytime null is used. Null is null afterall...
+	NULL  = &object.Null{}
+
+	// Boolean objects referenced when evaluating to prevent new bool objects from being created each time.
+	TRUE  = &object.Boolean{Value: true}
+	FALSE = &object.Boolean{Value: false}
+)
+
 func Eval(node ast.Node) object.Object { // Placeholder stuff
 	switch node := node.(type) {
 
@@ -18,6 +27,10 @@ func Eval(node ast.Node) object.Object { // Placeholder stuff
 	// Evaluating expressions
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
+
+	case *ast.Boolean:
+		return nativeBoolToBooleanObject(node.Value)
+
 	}
 	return nil
 }
@@ -30,4 +43,12 @@ func evalStatements(stmts []ast.Statement) object.Object {
 	}
 
 	return result
+}
+
+func nativeBoolToBooleanObject(input bool) *object.Boolean {
+	if input {
+		return TRUE
+	} else {
+		return FALSE
+	}
 }

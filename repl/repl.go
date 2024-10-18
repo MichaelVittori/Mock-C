@@ -6,6 +6,7 @@ import (
 	"io" // Go input/output lib
 	"mockc/lexer" // our custom lexer
 	"mockc/parser"
+	"mockc/evaluator"
 )
 
 const PROMPT = ">> " // Prompt at the beginning of each newline for users to know when to input
@@ -33,8 +34,11 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, program.String())
-		io.WriteString(out, "\n")
+		eval := evaluator.Eval(program)
+		if eval != nil {
+			io.WriteString(out, eval.Inspect())
+			io.WriteString(out, "\n")
+		}
 	}
 }
 

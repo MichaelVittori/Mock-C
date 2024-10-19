@@ -237,3 +237,44 @@ func TestLetStatements(t *testing.T) {
 		testIntegerObject(t, testEval(tt.input), tt.expected)
 	}
 }
+
+func TestFunctionObject(t *testing.T) {
+	input := "fn(x) { x + 2; };"
+
+	evaluated := testEval(input)
+	fn, ok := evaluated.(*object.Function)
+	if !ok { t.Fatalf("Object is not function, got=%T (%+v)", evaluated, evaluated) }
+	if len(fn.Parameters) != 1 { t.Fatalf("Function has wrong parameters. Parameters = %+v", fn.Parameters) }
+	if fn.Parameters[0].String() != "x" { t.Fatalf("Parameter is not 'x'. got=%q", fn.Parameters[0]) }
+	expectedBody := "(x + 2)"
+	if fn.Body.String() != expectedBody { t.Fatalf("Body is not %q. got=%q", expectedBody, fn.Body.String()) }
+}
+
+func TestFunctionApplication(t *testing.T) {
+	tests := []struct {
+		input string
+		expected int64
+	}{
+		{"let identity = fn(x) { x; }; identity(5);", 5}, // Implicit return
+		{"let identity = fn(x) { return x; }; identity(5);", 5}, // Explicit return
+		{"let double = fn(x) { x * 2; }; double(5);", 10}, // Returning an expression (infix)
+		{"let negate = fn(x) { -x; }; negate(5);", -5}, // Returning an expression (postfix)
+		{"let negate = fn(x) { if (!x) { return 5; } else { 10; } }; negate(false);", 5}, // Impl and expl return in one
+		{"let add = fn(x, y) { x + y; }; add(5, 5);", 10}, // Multiple Params
+		{"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20}, // Nested function call, passing infix exp as param
+		{"fn(x) { x; }(5)", 5},
+	}
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
+}
+
+func TestClosures(t *testing.T) { // This test passes right away thanks to the implementation of enclosed environments
+	input := `
+let newAdder = fn(x) {
+fn(y) { x + y };
+};
+let addTwo = newAdder(2);
+addTwo(2);`
+	testIntegerObject(t, testEval(input), 4)
+}

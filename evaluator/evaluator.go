@@ -41,6 +41,18 @@ func Eval(node ast.Node, env *object.Environment) object.Object { // Placeholder
 		env.Set(node.Name.Value, val)
 
 	// Evaluating expressions
+	case *ast.FunctionLiteral:
+		params := node.Parameters
+		body := node.Body
+		return &object.Function{Parameters: params, Env: env, Body: body}
+
+	case *ast.CallExpression:
+		function := Eval(node.Function, env)
+		if isError(function) { return function }
+		args := evalExpressions(node.Arguments, env)
+		if len(args) == 1 && isError(args[0]) { return args[0] }
+		return applyFunction(function, args) // Execute the function
+
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
 
@@ -238,4 +250,46 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 	}
 
 	return val
+}
+
+func evalExpressions(exps []ast.Expression, env *object.Environment) []object.Object {
+	var result []object.Object
+
+	for _, e := range exps {
+		evaluated := Eval(e, env)
+		if isError(evaluated) { return []object.Object{evaluated} } // If an expression is an error, return it
+		result = append(result, evaluated) // Otherwise append it to results
+	}
+
+	return result
+}
+
+/*
+ Apply the function to the arguments
+ */
+func applyFunction(fn object.Object, args []object.Object) object.Object {
+	function, ok := fn.(*object.Function)
+	if !ok { return newError("Not a function: %s", fn.Type()) }
+
+	extendedEnv := extendFunctionEnv(function, args) // Create an enclosed environment for the function
+	evaluated := Eval(function.Body, extendedEnv) // Evaluate function body using the new environment
+	return unwrapReturnValue(evaluated)
+}
+
+/*
+ Create an enclosed environment for the function
+ */
+func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Environment {
+	env := object.NewEnclosedEnvironment(fn.Env)
+
+	for paramIndex, param := range fn.Parameters { env.Set(param.Value, args[paramIndex]) }
+	return env
+}
+
+/*
+ Extract the .Value field from the return value object
+ */
+func unwrapReturnValue(obj object.Object) object.Object {
+	if returnValue, ok := obj.(*object.ReturnValue); ok { return returnValue.Value }
+	return obj
 }

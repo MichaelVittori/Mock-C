@@ -10,6 +10,7 @@ const (
 	BOOLEAN_OBJECT = "BOOLEAN"
 	NULL_OBJECT    = "NULL"
 	RETURN_OBJECT  = "RETURN"
+	ERROR_OBJECT   = "ERROR"
 )
 
 // All values encountered when evaluating Moxie source code will be wrapped in a struct fulfilling the Object interface
@@ -43,3 +44,10 @@ type ReturnValue struct {
 
 func (rv *ReturnValue) Type() ObjectType { return RETURN_OBJECT }
 func (rv *ReturnValue) Inspect() string { return rv.Value.Inspect() }
+
+type Error struct { // If this were a really real language there would be a stack trace in here too
+	Message string
+}
+
+func (e *Error) Type() ObjectType { return ERROR_OBJECT }
+func (e *Error) Inspect() string { return e.Message }

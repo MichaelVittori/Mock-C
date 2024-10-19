@@ -7,6 +7,7 @@ import (
 	"mockc/lexer" // our custom lexer
 	"mockc/parser"
 	"mockc/evaluator"
+	"mockc/object"
 )
 
 const PROMPT = ">> " // Prompt at the beginning of each newline for users to know when to input
@@ -16,10 +17,12 @@ Basically the REPL engine. Called once and runs in a loop until broken by the us
  */
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+	env := object.NewEnvironment()
 
 	for { // Perpetual for loop... I guess Go has those
 		fmt.Fprintf(out, PROMPT) // Formats string and writes to out
 		scanned := scanner.Scan()
+
 		if !scanned { // If nothing was entered, break the loop
 			return
 		}
@@ -34,7 +37,7 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		eval := evaluator.Eval(program)
+		eval := evaluator.Eval(program, env)
 		if eval != nil {
 			io.WriteString(out, eval.Inspect())
 			io.WriteString(out, "\n")

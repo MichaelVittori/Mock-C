@@ -8,7 +8,8 @@ type ObjectType string
 const (
 	INTEGER_OBJECT = "INTEGER"
 	BOOLEAN_OBJECT = "BOOLEAN"
-	NULL_OBJECT = "NULL"
+	NULL_OBJECT    = "NULL"
+	RETURN_OBJECT  = "RETURN"
 )
 
 // All values encountered when evaluating Moxie source code will be wrapped in a struct fulfilling the Object interface
@@ -35,3 +36,10 @@ type Null struct {} // No value field because null has no value
 
 func (n *Null) Type() ObjectType { return NULL_OBJECT }
 func (n *Null) Inspect() string { return fmt.Sprintf("null")}
+
+type ReturnValue struct {
+	Value Object
+}
+
+func (rv *ReturnValue) Type() ObjectType { return RETURN_OBJECT }
+func (rv *ReturnValue) Inspect() string { return rv.Value.Inspect() }

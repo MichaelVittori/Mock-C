@@ -317,6 +317,25 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`len("hello world")`, 11},
 		{`len(1)`, "Argument to `len` not supported, got INTEGER"},
 		{`len("one", "two")`, "Wrong number of arguments. got=2, want=1"},
+		{`len([1,2,3,4])`, 4}, // Test len(arr)
+		{`first([1, 2, 3, 4])`, 1}, // Good first branch
+		{`first("abcdef")`, "Argument to 'first' must be ARRAY, got STRING"}, // Bad first branch
+		{`first([])`, NULL}, // Null first branch
+		{`first()`, "Wrong number of arguments. got=0, want=1"}, // Empty first branch
+		{`first([1,2],[3,4])`, "Wrong number of arguments. got=2, want=1"}, // Overloaded first branch
+		{`last([1, 2, 3, 4])`, 4}, // Good last branch
+		{`last("abcdef")`, "Argument to 'last' must be ARRAY, got STRING"}, // Bad last branch
+		{`last([])`, NULL}, // Null last branch
+		{`last()`, "Wrong number of arguments. got=0, want=1"}, // Empty last branch
+		{`last([1,2],[3,4])`, "Wrong number of arguments. got=2, want=1"}, // Overloaded last branch
+		{`rest([1, 2, 3, 4]`, []int{2, 3, 4}},
+		{`rest("abcdef")`, "Argument to 'rest' must be ARRAY, got STRING"}, // Bad rest branch
+		{`rest([])`, NULL}, // Null rest branch
+		{`rest()`, "Wrong number of arguments. got=0, want=1"}, // Empty rest branch
+		{`rest([1,2],[3,4])`, "Wrong number of arguments. got=2, want=1"}, // Overloaded rest branch
+		{`push([1, 2, 3], 4)`, []int{1, 2, 3, 4}},
+		{`push([], 1)`, []int{1}},
+		{`push(1, 1)`, "Argument to 'push' must be ARRAY, got INTEGER"},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
@@ -390,20 +409,29 @@ func TestArrayIndexExpressions(t *testing.T) {
 		},
 		{
 			"[1, 2, 3][3]",
-			nil,
+			"Index 3 out of bounds for array length 3",
 		},
 		{
 			"[1, 2, 3][-1]",
-			nil,
+			"Index -1 out of bounds for array length 3",
 		},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		integer, ok := tt.expected.(int)
-		if ok {
-			testIntegerObject(t, evaluated, int64(integer))
-		} else {
-			testNullObject(t, evaluated)
+		switch expected := tt.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		case string:
+			errObj, ok := evaluated.(*object.Error)
+			if !ok {
+				t.Errorf("object is not Error. got=%T (%+v)",
+					evaluated, evaluated)
+				continue
+			}
+			if errObj.Message != expected {
+				t.Errorf("wrong error message. expected=%q, got=%q",
+					expected, errObj.Message)
+			}
 		}
 	}
 }

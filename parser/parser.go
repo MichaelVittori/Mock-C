@@ -17,18 +17,20 @@ const (
 	PRODUCT		// *
 	PREFIX		// -X or !X
 	CALL		// foobar(x)
+	INDEX		// arr[x]
 )
 
 var precedences = map[token.TokenType]int{
-	token.EQ:	  EQUALS,
-	token.NEQ:	  EQUALS,
-	token.LTHAN:  LESSGREATER,
-	token.GTHAN:  LESSGREATER,
-	token.PLUS:   SUM,
-	token.MINUS:  SUM,
-	token.DIVIDE: PRODUCT,
-	token.TIMES:  PRODUCT,
-	token.LPAREN: CALL,
+	token.EQ:	    EQUALS,
+	token.NEQ:	    EQUALS,
+	token.LTHAN:    LESSGREATER,
+	token.GTHAN:    LESSGREATER,
+	token.PLUS:     SUM,
+	token.MINUS:    SUM,
+	token.DIVIDE:   PRODUCT,
+	token.TIMES:    PRODUCT,
+	token.LPAREN:   CALL,
+	token.LBRACKET: INDEX,
 }
 
 type (
@@ -101,6 +103,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.NEQ, p.parseInfixExpression)
 	p.registerInfix(token.LTHAN, p.parseInfixExpression)
 	p.registerInfix(token.GTHAN, p.parseInfixExpression)
+	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 
 	// This one's a little unique
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
@@ -494,4 +497,14 @@ func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 
 	if !p.expectPeek(end) { return nil } // If the expression list is not properly closed, return nil
 	return list
+}
+
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	exp := &ast.IndexExpression{Token: p.currToken, Left: left}
+
+	p.nextToken()
+	exp.Index = p.parseExpression(LOWEST)
+	if !p.expectPeek(token.RBRACKET) { return nil }
+
+	return exp
 }

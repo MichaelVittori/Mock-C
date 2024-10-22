@@ -17,6 +17,7 @@ const (
 	FUNCTION_OBJECT = "FUNCTION"
 	STRING_OBJECT   = "STRING"
 	BUILTIN_OBJECT  = "BUILTIN"
+	ARRAY_OBJECT    = "ARRAY"
 )
 
 // All values encountered when evaluating Moxie source code will be wrapped in a struct fulfilling the Object interface
@@ -97,3 +98,23 @@ type BuiltIn struct {
 
 func (b *BuiltIn) Type() ObjectType { return BUILTIN_OBJECT }
 func (b *BuiltIn) Inspect() string { return "builtin function" }
+
+type Array struct {
+	Elements []Object
+}
+
+func (a *Array) Type() ObjectType { return ARRAY_OBJECT }
+func (a *Array) Inspect() string {
+	var out bytes.Buffer
+
+	elements := []string{}
+	for _, e := range a.Elements {
+		elements = append(elements, e.Inspect())
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}

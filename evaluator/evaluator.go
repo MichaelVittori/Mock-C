@@ -10,6 +10,10 @@ var (
 	// No need to create new Null objects everytime null is used. Null is null afterall...
 	NULL  = &object.Null{}
 
+	// This is used when executing print() in builtin.go, this removes the NULL return and prevents us from making a new
+	// blank string everytime we call print()
+	NEWLINE = &object.String{Value: ""}
+
 	// Boolean objects referenced when evaluating to prevent new bool objects from being created each time.
 	TRUE  = &object.Boolean{Value: true}
 	FALSE = &object.Boolean{Value: false}
@@ -101,6 +105,9 @@ func Eval(node ast.Node, env *object.Environment) object.Object { // Placeholder
 		if isError(index) { return index }
 
 		return evalIndexExpression(left, index)
+
+	case *ast.HashLiteral:
+		return evalHashLiteral(node, env)
 	}
 
 	return nil
@@ -333,6 +340,8 @@ func evalIndexExpression(left, index object.Object) object.Object {
 	switch {
 	case left.Type() == object.ARRAY_OBJECT && index.Type() == object.INTEGER_OBJECT:
 		return evalArrayIndexExpression(left, index)
+	case left.Type() == object.HASH_OBJECT:
+		return evalHashIndexExpression(left, index)
 	default:
 		return newError("Index operator not supported: %s", left.Type())
 	}
@@ -346,4 +355,36 @@ func evalArrayIndexExpression(array, index object.Object) object.Object {
 	if idx < 0 || idx > max { return newError("Index %d out of bounds for array length %d", idx, max + 1) }
 
 	return arrayObject.Elements[idx]
+}
+
+func evalHashLiteral(node *ast.HashLiteral, env *object.Environment) object.Object {
+	pairs := make(map[object.HashKey]object.HashPair)
+
+	for keyNode, valueNode := range node.Pairs { // For all key/values
+		key := Eval(keyNode, env) // Evaluate the key, if an error occurs, return
+		if isError(key) { return key }
+
+		hashKey, ok := key.(object.Hashable) // Check if key is hashable, if not throw a new error
+		if !ok { return newError("Type %s is not hashable", key.Type()) }
+
+		value := Eval(valueNode, env) // Evaluate the value, if an error occurs return
+		if isError(value) { return value }
+
+		hashed := hashKey.HashKey() // Otherwise, add the key/value pair to the map of pairs
+		pairs[hashed] = object.HashPair{Key: key, Value: value}
+	}
+
+	return &object.Hash{Pairs: pairs}
+}
+
+func evalHashIndexExpression(left, index object.Object) object.Object {
+	hashObject := left.(*object.Hash)
+
+	key, ok := index.(object.Hashable)
+	if !ok { return newError("Type %s is not hashable", index.Type()) }
+
+	pair, ok := hashObject.Pairs[key.HashKey()]
+	if !ok { return NULL }
+
+	return pair.Value
 }

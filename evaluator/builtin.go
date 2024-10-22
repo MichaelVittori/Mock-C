@@ -1,6 +1,9 @@
 package evaluator
 
-import "mockc/object"
+import (
+	"mockc/object"
+	"fmt"
+)
 
 // Basically a second environment but for our builtin functions
 var builtins = map[string]*object.BuiltIn {
@@ -70,6 +73,13 @@ var builtins = map[string]*object.BuiltIn {
 			newElements[length] = args[1]
 
 			return &object.Array{Elements: newElements}
+		},
+	},
+
+	"print": &object.BuiltIn {
+		Fn: func(args ...object.Object) object.Object {
+			for _, arg := range args { fmt.Println(arg.Inspect()) }
+			return NEWLINE // The null return looked bad so I added a new constant to evaluator
 		},
 	},
 }

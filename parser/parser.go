@@ -92,6 +92,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseArray)
+	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
 
 	// Make map of infix token parse functions
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -507,4 +508,24 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	if !p.expectPeek(token.RBRACKET) { return nil }
 
 	return exp
+}
+
+func (p *Parser) parseHashLiteral() ast.Expression {
+	hash := &ast.HashLiteral{Token: p.currToken}
+	hash.Pairs = make(map[ast.Expression]ast.Expression)
+
+	for !p.peekTokenIs(token.RBRACE) { // Iterate through the expression
+		p.nextToken()
+		key := p.parseExpression(LOWEST) // Key is first thing we see after {
+		if !p.expectPeek(token.COLON) { return nil } // If next up isn't a : return nil
+
+		p.nextToken()
+		value := p.parseExpression(LOWEST) // Value comes after colon
+		hash.Pairs[key] = value // Create pair using key and value
+		if !p.peekTokenIs(token.RBRACE) && !p.expectPeek(token.COMMA) { return nil } // If the map does not continue and is not properly closed, return nil
+
+	}
+
+	if !p.expectPeek(token.RBRACE) { return nil } // Again, if the map is not properly closed, return nil
+	return hash
 }

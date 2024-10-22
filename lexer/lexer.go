@@ -90,6 +90,9 @@ func (l *Lexer) NextToken() token.Token {
 		} else {
 			tok = newToken(token.GTHAN, l.ch)
 		}
+	case '"':
+		tok.Type = token.STRING
+		tok.Literal = l.readString()
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
@@ -200,4 +203,15 @@ func determineLeadChar(ch byte) token.TokenType {
 		return token.LEQ
 	} 
 	return token.ILLEGAL // This should never come up
+}
+
+func (l *Lexer) readString() string {
+	position := l.position + 1
+	for {
+		l.readChar()
+		if l.ch == '"' || l.ch == 0 { break } // TODO: Possible improvements: Add error handling if EOF is encountered,
+											  // 	   						  Add escape character support
+	}
+
+	return l.input[position:l.position]
 }

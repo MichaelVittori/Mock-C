@@ -15,6 +15,7 @@ const (
 	RETURN_OBJECT   = "RETURN"
 	ERROR_OBJECT    = "ERROR"
 	FUNCTION_OBJECT = "FUNCTION"
+	STRING_OBJECT   = "STRING"
 )
 
 // All values encountered when evaluating Moxie source code will be wrapped in a struct fulfilling the Object interface
@@ -79,3 +80,10 @@ func (f *Function) Inspect() string {
 
 	return out.String()
 }
+
+type String struct {
+	Value string
+}
+
+func (s *String) Type() ObjectType { return STRING_OBJECT }
+func (s *String) Inspect() string { return s.Value }

@@ -13,8 +13,9 @@ const (
 
 	// Identifiers and literals
 	IDENTIFIER = "IDENTIFIER" //method and variable names
-	INTEGER    = "INTEGER"    //integers, duh (1, 2, 3, 4...)
-	FLOAT      = "FLOAT"      //floating point numbers (1.1, 2.1231, 3.14)
+	INTEGER    = "INTEGER"
+	STRING     = "STRING"
+
 
 	// Arithmetic Operators
 	ASSIGN = "="

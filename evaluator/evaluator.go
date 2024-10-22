@@ -85,6 +85,9 @@ func Eval(node ast.Node, env *object.Environment) object.Object { // Placeholder
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
 
+	case *ast.StringLiteral:
+		return &object.String{Value: node.Value} // Represented basically the same as strings
+
 	}
 	return nil
 }
@@ -153,6 +156,8 @@ func evalInfixExpression(left object.Object, operator string, right object.Objec
 		return evalIntegerInfixExpression(left, operator, right)
 	case left.Type() != right.Type():
 		return newError("Operand type mismatch: %s %s %s", left.Type(), operator, right.Type())
+	case left.Type() == object.STRING_OBJECT && right.Type() == object.STRING_OBJECT:
+		return evalStringInfixExpression(left, operator, right)
 	// The next two cases are made possible with pointer comparison
 	// If something is pointing to the same address as TRUE, Eval knows it's true and vice versa
 	// These are also placed below the integer operands case so that int == int works, as we use different objects for each instance of int
@@ -189,6 +194,13 @@ func evalIntegerInfixExpression(left object.Object, operator string, right objec
 	default:
 		return newError("Unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
+}
+
+func evalStringInfixExpression(left object.Object, operator string, right object.Object) object.Object {
+	if operator != "+" { return newError("Unknown string operator: %s %s %s", left.Type(), operator, right.Type())}
+	leftString := left.(*object.String).Value
+	rightString := right.(*object.String).Value
+	return &object.String{Value: leftString + rightString}
 }
 
 func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Object {

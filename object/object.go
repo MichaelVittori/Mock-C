@@ -16,6 +16,7 @@ const (
 	ERROR_OBJECT    = "ERROR"
 	FUNCTION_OBJECT = "FUNCTION"
 	STRING_OBJECT   = "STRING"
+	BUILTIN_OBJECT  = "BUILTIN"
 )
 
 // All values encountered when evaluating Moxie source code will be wrapped in a struct fulfilling the Object interface
@@ -87,3 +88,12 @@ type String struct {
 
 func (s *String) Type() ObjectType { return STRING_OBJECT }
 func (s *String) Inspect() string { return s.Value }
+
+type BuiltInFunction func(args ...Object) Object // Basic built in abstract signature, accepts 0 or more objects as args and returns an object
+
+type BuiltIn struct {
+	Fn BuiltInFunction
+}
+
+func (b *BuiltIn) Type() ObjectType { return BUILTIN_OBJECT }
+func (b *BuiltIn) Inspect() string { return "builtin function" }
